@@ -19,6 +19,14 @@ io.on('connection', function(socket){
     socket.emit('spawn', thisPlayer);//Tell this player he spawned
     socket.broadcast.emit('spawn', thisPlayer);//Tell other this player spawned
 
+    //Update position from client
+    socket.on('updatePosition', function(data){
+        console.log(data.id);
+        thisPlayer.position.x = data.position.x;
+        thisPlayer.position.y = data.position.y;
+        thisPlayer.position.z = data.position.z;
+        socket.broadcast.emit('updatePosition', thisPlayer);
+    });
     //Tell this player about other players
     for(var playerID in playersList){
         if(playerID != thisPlayerID){
