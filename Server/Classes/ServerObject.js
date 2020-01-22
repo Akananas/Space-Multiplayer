@@ -1,10 +1,10 @@
 var shortid = require('shortid');
 var Vector3 = require('./Vector3');
-module.exports = class Player{
+
+module.exports = class ServerObject{
     constructor(){
-        this.username = '';
         this.id = shortid.generate();
+        this.name = 'ServerObject';
         this.position = new Vector3();
-        this.rotation = 0;
     }
 }
