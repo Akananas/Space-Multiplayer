@@ -5,7 +5,9 @@ module.exports = class Bullet extends ServerObject{
     constructor(){
         super();
         this.direction = new Vector3(); 
-        this.speed = 1.5;
+        this.speed = 7.5;
+        this.isDestroyed = false;
+        this.activator = '';
     }
 
     onUpdate(){ 
@@ -14,6 +16,7 @@ module.exports = class Bullet extends ServerObject{
                            this.Comma(this.direction.x) * this.speed).toString().replace(".",",");
         this.position.z = (this.Comma(this.position.z) + 
                            this.Comma(this.direction.z) * this.speed).toString().replace(".",","); 
+        return this.isDestroyed;
     }
 
     Comma(data){

@@ -8,9 +8,9 @@ namespace SpaceMulti.PlayerScript{
 	public class PlayerManager : MonoBehaviour{
 		[Header("Data")]
 		[SerializeField]
-		private float speed = 4;
+		private float speed = 10;
 		[SerializeField]
-		private float rotation = 60;
+		private float rotation = 90;
 		[Header("Class References")]
 		[SerializeField]
 		private NetworkIdentity networkIdentity;
@@ -32,19 +32,19 @@ namespace SpaceMulti.PlayerScript{
 		} 
 		private void CheckMovement(){
 			float horizontal = Input.GetAxis("Horizontal");
-			float vertical = Input.GetAxis("Vertical");
+			float vertical = Input.GetAxisRaw("Vertical");
 			transform.Rotate(new Vector3(0,horizontal * rotation * Time.deltaTime,0));
-			transform.position += new Vector3(horizontal, 0, vertical) * speed * Time.deltaTime;
+			transform.position += transform.forward * vertical * speed * Time.deltaTime;
 		}
 
 		private void CheckShooting(){
 			shootingCooldown.CooldownUpdate();
-			if(Input.GetMouseButton(0) && !shootingCooldown.IsOnCooldown()){
+			if(Input.GetButton("Fire1") && !shootingCooldown.IsOnCooldown()){
 				shootingCooldown.StartCooldown();
 				//Define bullet
+				bulletData.activator = NetworkClient.ClientID;
 				bulletData.position.VectorToString(bulletSpawnPoint.position);
 				bulletData.direction.VectorToString(-bulletSpawnPoint.forward);
-				Debug.Log(bulletData.direction.z); 
 				//Send bullet
 				networkIdentity.GetSocket().Emit("fireBullet", new JSONObject(JsonUtility.ToJson(bulletData)));
 			}

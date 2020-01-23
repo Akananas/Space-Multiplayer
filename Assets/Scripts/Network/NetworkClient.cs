@@ -4,6 +4,8 @@ using UnityEngine;
 using SocketIO;
 using SpaceMulti.Utility;
 using SpaceMulti.Scriptable;
+using SpaceMulti.Gameplay;
+
 namespace SpaceMulti.Network{
     public class NetworkClient : SocketIOComponent{
 
@@ -96,10 +98,12 @@ namespace SpaceMulti.Network{
                         float directionX = E.data["direction"]["x"].JSONToFloat();
                         float directionY = E.data["direction"]["y"].JSONToFloat();
                         float directionZ = E.data["direction"]["z"].JSONToFloat();
-
+                        string activator = E.data["activator"].ToString().RemoveQuotes();
                         float rot = Mathf.Atan2(directionZ, directionX) * Mathf.Rad2Deg;
                         Vector3 currentRot = new Vector3(0,rot,0);
                         spawnedObject.transform.rotation = Quaternion.Euler(currentRot);
+                        WhoActivatedMe whoActivatedMe = spawnedObject.GetComponent<WhoActivatedMe>();
+                        whoActivatedMe.WhoActivateMe = activator;
                     }
                     
                     serverObjects.Add(id,ni);
