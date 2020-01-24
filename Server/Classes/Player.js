@@ -34,6 +34,7 @@ module.exports = class Player{
         console.log('Taking damage');
         //Change health when getting hit
         this.health -= amount;
+        console.log(this.health); 
         //Check if it kills
         if(this.health <= 0){
             this.isDead = true;

@@ -19,12 +19,18 @@ namespace SpaceMulti.PlayerScript{
 		private ParticleSystem particle;
 		private Cooldown shootingCooldown;
 		private BulletData bulletData;
+		private Rigidbody rigidbody;
+		private AudioSource audioSource;
+		private bool canRotate;
 		private void Start() {
-			shootingCooldown = new Cooldown(1);
+			shootingCooldown = new Cooldown(0.75f);
+			canRotate = true;
 			bulletData = new BulletData();
 			bulletData.position = new Position();
 			bulletData.direction = new Position();
 			particle = bulletSpawnPoint.gameObject.GetComponent<ParticleSystem>();
+			rigidbody = GetComponent<Rigidbody>();
+			audioSource = GetComponent<AudioSource>();
 		}
 		private void Update() {
 			if(networkIdentity.IsControlling()){
@@ -35,13 +41,16 @@ namespace SpaceMulti.PlayerScript{
 		private void CheckMovement(){
 			float horizontal = Input.GetAxis("Horizontal");
 			float vertical = Input.GetAxis("Vertical");
-			transform.Rotate(new Vector3(0,horizontal * rotation * Time.deltaTime,0));
 			transform.position += transform.forward * vertical * speed * Time.deltaTime;
+			if(canRotate){
+				transform.Rotate(new Vector3(0,horizontal * rotation * Time.deltaTime,0));
+			}
 		}
 
 		private void CheckShooting(){
 			shootingCooldown.CooldownUpdate();
 			if(Input.GetButton("Fire1") && !shootingCooldown.IsOnCooldown()){
+				StartCoroutine(Aiming());
 				shootingCooldown.StartCooldown();
 				//Define bullet
 				bulletData.activator = NetworkClient.ClientID;
@@ -52,9 +61,20 @@ namespace SpaceMulti.PlayerScript{
 			}
 		}
 
-		public void ShootingParticle(){
+		public void ShootingEffects(){
 			Debug.Log("particles");
 			particle.Play();
+			audioSource.Play();
+		}
+
+		private void OnCollisionExit(Collision other) {
+			rigidbody.velocity = Vector3.zero;
+		}
+
+		IEnumerator Aiming(){
+			canRotate = false;
+			yield return new WaitForSeconds(0.25f);
+			canRotate = true;
 		}
 	}
 }

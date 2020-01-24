@@ -26,13 +26,8 @@ setInterval(() => {
             let isRespawn = player.respawnCounter();
             if(isRespawn){
                 let returnData = {
-                    id: player.id,
-                    position: {
-                        x: player.position.x,
-                        y: player.position.y,
-                        z: player.position.z,
-                    }
-                }
+                    id: player.id
+                };
                 sockets[playerID].emit('playerRespawn',returnData);
                 sockets[playerID].broadcast.emit('playerRespawn',returnData);
             }
@@ -77,7 +72,16 @@ io.on('connection', function(socket){
         thisPlayer.position.y = data.position.y;
         thisPlayer.position.z = data.position.z;
         thisPlayer.rotation = data.rotation;
-        socket.broadcast.emit('updatePosition', thisPlayer);
+        var returnData = {
+            id: thisPlayer.id,
+            rotation: thisPlayer.rotation,
+            position: {
+                x: thisPlayer.position.x,
+                y: thisPlayer.position.y,
+                z: thisPlayer.position.z
+            }
+        };
+        socket.broadcast.emit('updatePosition', returnData);
     });
     socket.on('fireBullet', function(data){
         var bullet = new Bullet();
@@ -121,8 +125,7 @@ io.on('connection', function(socket){
                 if(bullet.activator != playerID){
                     let player = playersList[playerID];
                     let distance = bullet.position.Distance(player.position);
-                    console.log(bullet.position.x);
-                    if(distance < 0.15){  
+                    if(distance < 0.2){  
                         playerHit = true; 
                         let isDead = player.takeDamage(50);
                         if(isDead){

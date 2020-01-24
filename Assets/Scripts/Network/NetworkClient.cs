@@ -6,7 +6,7 @@ using SpaceMulti.Utility;
 using SpaceMulti.Scriptable;
 using SpaceMulti.Gameplay;
 using SpaceMulti.PlayerScript;
-
+using SpaceMulti.Shader;
 namespace SpaceMulti.Network{
     public class NetworkClient : SocketIOComponent{
         public const float SERVER_UPDATE_TIME = 10;
@@ -17,6 +17,10 @@ namespace SpaceMulti.Network{
         private GameObject playerPrefab; 
         [SerializeField]
         private ServerObjects serverSpawnables;
+        [SerializeField]
+        private ImageEffectScript imageEffectScript;
+        [SerializeField]
+        List<Transform> spawnPoint = new List<Transform>();
         public static string ClientID{get; private set;}
         private Dictionary<string, NetworkIdentity> serverObjects;
         // Start is called before the first frame update
@@ -46,6 +50,7 @@ namespace SpaceMulti.Network{
                 //Spawn every players
                 string id = E.data["id"].ToString().RemoveQuotes();
                 GameObject go = Instantiate(playerPrefab, networkContainer);
+                go.transform.position = spawnPoint[Random.Range(0,4)].position;
                 go.name = string.Format("Player {0}", id);
                 NetworkIdentity ni = go.GetComponent<NetworkIdentity>();
                 ni.SetControllerID(id);
@@ -91,12 +96,11 @@ namespace SpaceMulti.Network{
                         float directionZ = E.data["direction"]["z"].JSONToFloat();
                         string activator = E.data["activator"].ToString().RemoveQuotes();
                         float speed = E.data["speed"].JSONToFloat();
-                        float rot = Mathf.Atan2(directionZ, directionX) * Mathf.Rad2Deg;
-                        Vector3 currentRot = new Vector3(0,rot,0);
-                        spawnedObject.transform.rotation = Quaternion.Euler(currentRot);
+                        GameObject activatorGO = serverObjects[activator].gameObject;
+                        spawnedObject.transform.rotation = serverObjects[activator].gameObject.transform.rotation;
                         WhoActivatedMe whoActivatedMe = spawnedObject.GetComponent<WhoActivatedMe>();
                         whoActivatedMe.WhoActivateMe = activator;
-                        serverObjects[activator].gameObject.GetComponent<PlayerManager>().ShootingParticle();
+                        activatorGO.GetComponent<PlayerManager>().ShootingEffects();
                         Projectile projectile = spawnedObject.GetComponent<Projectile>();
                         projectile.Direction = new Vector3(directionX,directionY,directionZ);
                         projectile.Speed = speed;
@@ -114,15 +118,18 @@ namespace SpaceMulti.Network{
             On("playerDied", (E) => {
                 string id = E.data["id"].ToString().RemoveQuotes();
                 NetworkIdentity ni = serverObjects[id];
+                if(id == ClientID){
+                    imageEffectScript.IsDead = true;
+                }
                 ni.gameObject.SetActive(false);
             });
             On("playerRespawn", (E) => {
                 string id = E.data["id"].ToString().RemoveQuotes();
-                float x = E.data["position"]["x"].JSONToFloat();
-                float y = E.data["position"]["y"].JSONToFloat();
-                float z = E.data["position"]["z"].JSONToFloat();
+                if(id == ClientID){
+                    imageEffectScript.IsDead = false;
+                }
                 NetworkIdentity ni = serverObjects[id];
-                ni.transform.position = new Vector3(x,y,z);
+                ni.transform.position = spawnPoint[Random.Range(0,4)].position;
                 ni.gameObject.SetActive(true);
             });
         }
