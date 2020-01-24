@@ -2,6 +2,7 @@
 var io = require('socket.io')(process.env.PORT || 52300);
 var Player = require('./Classes/Player');
 var Bullet = require('./Classes/Bullet');
+var Utility = require('./Classes/Utility');
 
 console.log('Server has started');
 
@@ -15,31 +16,43 @@ setInterval(() => {
         var isDestroyed = bullet.onUpdate();
         //Remove
         if(isDestroyed){
-            var index = bullets.indexOf(bullet);
-            if(index > -1){
-                bullets.splice(index,1);
-                var returnData = {
-                    id: bullet.id
-                }
-                for(var playerID in playersList){ 
-                    sockets[playerID].emit('serverUnspawn', returnData);
-                }
-            }
-        }else{
-            var returnData = {
-                id: bullet.id,
-                position: {
-                    x: bullet.position.x, 
-                    y: bullet.position.y,
-                    z: bullet.position.z  
-                }
-            }
-            for(var playerID in playersList){
-                sockets[playerID].emit('updateBullet', returnData);
-            }
+            despawnBullet(bullet);
         }
     });
+    //Handle dead players
+    for(var playerID in playersList){
+        let player = playersList[playerID];
+        if(player.isDead){
+            let isRespawn = player.respawnCounter();
+            if(isRespawn){
+                let returnData = {
+                    id: player.id,
+                    position: {
+                        x: player.position.x,
+                        y: player.position.y,
+                        z: player.position.z,
+                    }
+                }
+                sockets[playerID].emit('playerRespawn',returnData);
+                sockets[playerID].broadcast.emit('playerRespawn',returnData);
+            }
+        }
+    }
 }, 100, 0);
+
+function despawnBullet(bullet = Bullet){
+    console.log('Destroying bullet with id: ' + bullet.id);
+    var index = bullets.indexOf(bullet);
+    if(index > -1){
+        bullets.splice(index,1);
+        var returnData = {
+            id: bullet.id
+        }
+        for(var playerID in playersList){ 
+            sockets[playerID].emit('serverUnspawn', returnData);
+        }
+    }
+}
 io.on('connection', function(socket){
     console.log('Connection made!'); 
 
@@ -52,7 +65,6 @@ io.on('connection', function(socket){
     socket.emit('register', {id: thisPlayerID});
     socket.emit('spawn', thisPlayer);//Tell this player he spawned
     socket.broadcast.emit('spawn', thisPlayer);//Tell other this player spawned
-    
     //Tell this player about other players
     for(var playerID in playersList){
         if(playerID != thisPlayerID){
@@ -61,7 +73,7 @@ io.on('connection', function(socket){
     }
     //Update position from client
     socket.on('updatePosition', function(data){
-        thisPlayer.position.x = data.position.x;
+        thisPlayer.position.x = data.position.x; 
         thisPlayer.position.y = data.position.y;
         thisPlayer.position.z = data.position.z;
         thisPlayer.rotation = data.rotation;
@@ -77,11 +89,7 @@ io.on('connection', function(socket){
         bullet.direction.x = data.direction.x;
         bullet.direction.y = data.direction.y;
         bullet.direction.z = data.direction.z;
-        console.log(bullet.direction.x);
-        console.log(bullet.direction.y);
-        console.log(bullet.direction.z);
         bullets.push(bullet);
-
         var returnData = {
             name: bullet.name,
             id: bullet.id,
@@ -95,8 +103,9 @@ io.on('connection', function(socket){
                 x: bullet.direction.x,
                 y: bullet.direction.y,
                 z: bullet.direction.z
-            }
-        }
+            },
+            speed: Utility.Period(bullet.speed)
+        };
         socket.emit('serverSpawn', returnData);
         socket.broadcast.emit('serverSpawn', returnData);
     });
@@ -106,7 +115,33 @@ io.on('connection', function(socket){
             return bullet.id == data.id;
         });
         returnBullets.forEach(bullet =>{
-            bullet.isDestroyed = true;
+            let playerHit = false;
+            //Check we don't hit ourself
+            for(var playerID in playersList){
+                if(bullet.activator != playerID){
+                    let player = playersList[playerID];
+                    let distance = bullet.position.Distance(player.position);
+                    console.log(bullet.position.x);
+                    if(distance < 0.15){  
+                        playerHit = true; 
+                        let isDead = player.takeDamage(50);
+                        if(isDead){
+                            console.log('Player with id: ' + player.id + ' has died');
+                            let returnData = {
+                                id: player.id
+                            };
+                            sockets[playerID].emit('playerDied', returnData);
+                            sockets[playerID].broadcast.emit('playerDied', returnData);
+                        }else{
+                            console.log('Player with id: ' + player.id + ' has ' + player.health + ' health left'); 
+                        }
+                        despawnBullet(bullet);
+                    }
+                } 
+            }
+            if(!playerHit){
+                bullet.isDestroyed = true;
+            }
         });
     });
     socket.on('disconnect', function(){

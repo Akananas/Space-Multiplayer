@@ -16,6 +16,7 @@ namespace SpaceMulti.Gameplay{
 				networkIdentity.GetSocket().Emit("collisionDestroy", new JSONObject(JsonUtility.ToJson(new IDData(){
 					id = networkIdentity.GetID()
 				})));
+				Debug.Log(networkIdentity.GetID());
 			}
 		}
 	}

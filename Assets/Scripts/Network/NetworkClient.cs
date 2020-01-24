@@ -5,10 +5,11 @@ using SocketIO;
 using SpaceMulti.Utility;
 using SpaceMulti.Scriptable;
 using SpaceMulti.Gameplay;
+using SpaceMulti.PlayerScript;
 
 namespace SpaceMulti.Network{
     public class NetworkClient : SocketIOComponent{
-
+        public const float SERVER_UPDATE_TIME = 10;
         [Header("Network Client")]
         [SerializeField]
         private Transform networkContainer;
@@ -44,7 +45,6 @@ namespace SpaceMulti.Network{
             On("spawn", (E) => {
                 //Spawn every players
                 string id = E.data["id"].ToString().RemoveQuotes();
-
                 GameObject go = Instantiate(playerPrefab, networkContainer);
                 go.name = string.Format("Player {0}", id);
                 NetworkIdentity ni = go.GetComponent<NetworkIdentity>();
@@ -61,7 +61,6 @@ namespace SpaceMulti.Network{
             });
             On("updatePosition", (E) => {
                 string id = E.data["id"].ToString().RemoveQuotes();
-                Debug.Log(id);
                 float x = E.data["position"]["x"].JSONToFloat();
                 float y = E.data["position"]["y"].JSONToFloat();
                 float z = E.data["position"]["z"].JSONToFloat();
@@ -69,15 +68,7 @@ namespace SpaceMulti.Network{
                 ni.transform.rotation = Quaternion.Euler(0,float.Parse(E.data["rotation"].str),0);
                 ni.transform.position = new Vector3(x,y,z);
             });
-            On("updateBullet", (E) => {
-                string id = E.data["id"].ToString().RemoveQuotes();
-                Debug.Log(id);
-                float x = E.data["position"]["x"].JSONToFloat();
-                float y = E.data["position"]["y"].JSONToFloat();
-                float z = E.data["position"]["z"].JSONToFloat();
-                NetworkIdentity ni = serverObjects[id];
-                ni.transform.position = new Vector3(x,y,z);
-            });
+            //Need to replace with a pool
             On("serverSpawn",(E) => {
                 string name = E.data["name"].str;
                 string id = E.data["id"].ToString().RemoveQuotes();
@@ -99,11 +90,16 @@ namespace SpaceMulti.Network{
                         float directionY = E.data["direction"]["y"].JSONToFloat();
                         float directionZ = E.data["direction"]["z"].JSONToFloat();
                         string activator = E.data["activator"].ToString().RemoveQuotes();
+                        float speed = E.data["speed"].JSONToFloat();
                         float rot = Mathf.Atan2(directionZ, directionX) * Mathf.Rad2Deg;
                         Vector3 currentRot = new Vector3(0,rot,0);
                         spawnedObject.transform.rotation = Quaternion.Euler(currentRot);
                         WhoActivatedMe whoActivatedMe = spawnedObject.GetComponent<WhoActivatedMe>();
                         whoActivatedMe.WhoActivateMe = activator;
+                        serverObjects[activator].gameObject.GetComponent<PlayerManager>().ShootingParticle();
+                        Projectile projectile = spawnedObject.GetComponent<Projectile>();
+                        projectile.Direction = new Vector3(directionX,directionY,directionZ);
+                        projectile.Speed = speed;
                     }
                     
                     serverObjects.Add(id,ni);
@@ -114,6 +110,20 @@ namespace SpaceMulti.Network{
                 NetworkIdentity ni = serverObjects[id];
                 serverObjects.Remove(id);
                 DestroyImmediate(ni.gameObject);
+            });
+            On("playerDied", (E) => {
+                string id = E.data["id"].ToString().RemoveQuotes();
+                NetworkIdentity ni = serverObjects[id];
+                ni.gameObject.SetActive(false);
+            });
+            On("playerRespawn", (E) => {
+                string id = E.data["id"].ToString().RemoveQuotes();
+                float x = E.data["position"]["x"].JSONToFloat();
+                float y = E.data["position"]["y"].JSONToFloat();
+                float z = E.data["position"]["z"].JSONToFloat();
+                NetworkIdentity ni = serverObjects[id];
+                ni.transform.position = new Vector3(x,y,z);
+                ni.gameObject.SetActive(true);
             });
         }
     }

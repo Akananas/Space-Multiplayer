@@ -16,6 +16,7 @@ namespace SpaceMulti.PlayerScript{
 		private NetworkIdentity networkIdentity;
 		[SerializeField]
 		private Transform bulletSpawnPoint;
+		private ParticleSystem particle;
 		private Cooldown shootingCooldown;
 		private BulletData bulletData;
 		private void Start() {
@@ -23,6 +24,7 @@ namespace SpaceMulti.PlayerScript{
 			bulletData = new BulletData();
 			bulletData.position = new Position();
 			bulletData.direction = new Position();
+			particle = bulletSpawnPoint.gameObject.GetComponent<ParticleSystem>();
 		}
 		private void Update() {
 			if(networkIdentity.IsControlling()){
@@ -32,7 +34,7 @@ namespace SpaceMulti.PlayerScript{
 		} 
 		private void CheckMovement(){
 			float horizontal = Input.GetAxis("Horizontal");
-			float vertical = Input.GetAxisRaw("Vertical");
+			float vertical = Input.GetAxis("Vertical");
 			transform.Rotate(new Vector3(0,horizontal * rotation * Time.deltaTime,0));
 			transform.position += transform.forward * vertical * speed * Time.deltaTime;
 		}
@@ -48,6 +50,11 @@ namespace SpaceMulti.PlayerScript{
 				//Send bullet
 				networkIdentity.GetSocket().Emit("fireBullet", new JSONObject(JsonUtility.ToJson(bulletData)));
 			}
+		}
+
+		public void ShootingParticle(){
+			Debug.Log("particles");
+			particle.Play();
 		}
 	}
 }

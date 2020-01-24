@@ -1,5 +1,6 @@
 var ServerObject = require('./ServerObject');
 var Vector3 = require('./Vector3');
+var Utility =  require('./Utility');
 
 module.exports = class Bullet extends ServerObject{
     constructor(){
@@ -12,14 +13,10 @@ module.exports = class Bullet extends ServerObject{
 
     onUpdate(){ 
         //Trouble with comma and period
-        this.position.x = (this.Comma(this.position.x) + 
-                           this.Comma(this.direction.x) * this.speed).toString().replace(".",",");
-        this.position.z = (this.Comma(this.position.z) + 
-                           this.Comma(this.direction.z) * this.speed).toString().replace(".",","); 
+        this.position.x = Utility.Period(Utility.Comma(this.position.x) + 
+                           Utility.Comma(this.direction.x) * this.speed);
+        this.position.z = Utility.Period(Utility.Comma(this.position.z) + 
+                           Utility.Comma(this.direction.z) * this.speed); 
         return this.isDestroyed;
-    }
-
-    Comma(data){
-        return parseFloat(data.replace(",",".")); 
     }
 }
