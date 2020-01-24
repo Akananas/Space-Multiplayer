@@ -50,7 +50,8 @@ namespace SpaceMulti.Network{
                 //Spawn every players
                 string id = E.data["id"].ToString().RemoveQuotes();
                 GameObject go = Instantiate(playerPrefab, networkContainer);
-                go.transform.position = spawnPoint[Random.Range(0,4)].position;
+                int spawnNum = Random.Range(0,4);
+                go.transform.position = spawnPoint[spawnNum].position;
                 go.name = string.Format("Player {0}", id);
                 NetworkIdentity ni = go.GetComponent<NetworkIdentity>();
                 ni.SetControllerID(id);
@@ -124,12 +125,14 @@ namespace SpaceMulti.Network{
                 ni.gameObject.SetActive(false);
             });
             On("playerRespawn", (E) => {
+                Debug.Log("respawn");
                 string id = E.data["id"].ToString().RemoveQuotes();
                 if(id == ClientID){
                     imageEffectScript.IsDead = false;
                 }
                 NetworkIdentity ni = serverObjects[id];
-                ni.transform.position = spawnPoint[Random.Range(0,4)].position;
+                int spawnNum = Random.Range(0,4);
+                ni.transform.position = spawnPoint[spawnNum].position;
                 ni.gameObject.SetActive(true);
             });
         }

@@ -22,9 +22,11 @@ namespace SpaceMulti.PlayerScript{
 		private Rigidbody rigidbody;
 		private AudioSource audioSource;
 		private bool canRotate;
+		private bool playable;
 		private void Start() {
 			shootingCooldown = new Cooldown(0.75f);
 			canRotate = true;
+			playable = true;
 			bulletData = new BulletData();
 			bulletData.position = new Position();
 			bulletData.direction = new Position();
@@ -33,11 +35,19 @@ namespace SpaceMulti.PlayerScript{
 			audioSource = GetComponent<AudioSource>();
 		}
 		private void Update() {
-			if(networkIdentity.IsControlling()){
+			if(networkIdentity.IsControlling() && playable){
 				CheckMovement();
 				CheckShooting();
 			}
 		} 
+		private void OnEnable() {
+			playable = true;
+			//In case it does weird thing if killed while shooting
+			canRotate = true;
+		}
+		private void OnDisable() {
+			playable = false;
+		}
 		private void CheckMovement(){
 			float horizontal = Input.GetAxis("Horizontal");
 			float vertical = Input.GetAxis("Vertical");
@@ -62,7 +72,6 @@ namespace SpaceMulti.PlayerScript{
 		}
 
 		public void ShootingEffects(){
-			Debug.Log("particles");
 			particle.Play();
 			audioSource.Play();
 		}
