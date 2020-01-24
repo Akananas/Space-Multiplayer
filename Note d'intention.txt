@@ -1,0 +1,3 @@
+Mon but était surtout d'essayer de faire du réseau car presque la totalité des jeux proposé pour le 2ème semestre
+demanderont du réseau. Pour ça, j'ai crée un serveur avec Node.js. Au niveau du jeu en lui-même, je voulais
+faire quelque chose d'assez simple et améliorer si il me restait du temps.

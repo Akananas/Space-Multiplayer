@@ -42,7 +42,6 @@
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 col = tex2D(_MainTex, i.uv);
-                // just invert the colors
                 col.rgb = dot(col.rgb, float3(0.3, 0.59, 0.11));
                 return col;
             }

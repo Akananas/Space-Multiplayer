@@ -125,7 +125,6 @@ namespace SpaceMulti.Network{
                 ni.gameObject.SetActive(false);
             });
             On("playerRespawn", (E) => {
-                Debug.Log("respawn");
                 string id = E.data["id"].ToString().RemoveQuotes();
                 if(id == ClientID){
                     imageEffectScript.IsDead = false;
